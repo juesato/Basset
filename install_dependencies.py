@@ -30,7 +30,7 @@ def main():
     ############################################################
 
     # install lfs
-    cmd = 'luarocks install lfs'
+    cmd = 'luarocks install luafilesystem'
     subprocess.call(cmd, shell=True)
 
     # install dpnn

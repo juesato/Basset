@@ -7,6 +7,7 @@ data/sample_beds.txt
 data/subsets
 data/models/*.th
 src/.ipynb_checkpoints
+src/torch-hdf5
 tutorials/*.bed
 tutorials/*.fa
 tutorials/*.h5

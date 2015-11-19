@@ -32,7 +32,7 @@ To download and install the remaining dependencies, run
     ./install_dependencies.py
 ```
 
-To download and install additional useful data, like my best pre-trained model and public datasets, run
+To download and install additional useful data, like my best pre-trained model and public datasets, you'll first want to install [SAMTools](http://www.htslib.org/download/) and bedtools (`sudo apt-get install bedtools`). Then run
 ```
     ./install_data.py
 ```

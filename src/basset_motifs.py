@@ -14,6 +14,11 @@ from sklearn import preprocessing
 
 import dna_io
 
+### Ignore warnings from matplotlib weblogo
+import warnings
+warnings.simplefilter(action="ignore", category=FutureWarning) 
+FNULL = open(os.devnull, 'w')
+
 ################################################################################
 # basset_motifs.py
 #
@@ -21,7 +26,7 @@ import dna_io
 # of the given model using the given sequences.
 ################################################################################
 
-weblogo_opts = '-X NO -Y NO --errorbars NO --fineprint ""'
+weblogo_opts = '-X NO -Y NO --errorbars NO -D fasta -F png --fineprint ""'
 weblogo_opts += ' -C "#CB2026" A A'
 weblogo_opts += ' -C "#34459C" C C'
 weblogo_opts += ' -C "#FBB116" G G'
@@ -38,6 +43,8 @@ def main():
     parser.add_option('-m', dest='meme_db', default='%s/data/motifs/Homo_sapiens.meme' % os.environ['BASSETDIR'], help='MEME database used to annotate motifs')
     parser.add_option('-s', dest='sample', default=None, type='int', help='Sample sequences from the test set [Default:%default]')
     parser.add_option('-t', dest='trim_filters', default=False, action='store_true', help='Trim uninformative positions off the filter ends [Default: %default]')
+    parser.add_option('--skip-heat', dest='skip_heat', default=False, help="Skip plotting heat maps of filters")
+    parser.add_option('--skip-logo', dest='skip_logo', default=False, help="Skip Weblogo plots for filters")
     (options,args) = parser.parse_args()
 
     if len(args) != 2:
@@ -55,6 +62,8 @@ def main():
     # load sequences
     test_hdf5_in = h5py.File(test_hdf5_file, 'r')
     seq_vecs = np.array(test_hdf5_in['test_in'])
+    # print seq_vecs.shape
+    # print "with numpy", seq_vecs.nbytes
     seq_targets = np.array(test_hdf5_in['test_out'])
     try:
         target_names = list(test_hdf5_in['target_labels'])
@@ -91,6 +100,7 @@ def main():
     # Torch predict
     #################################################################
     if options.model_hdf5_file is None:
+        print "No model hdf5 file specified"
         options.model_hdf5_file = '%s/model_out.h5' % options.out_dir
         torch_cmd = 'basset_motifs_predict.lua %s %s %s' % (model_file, test_hdf5_file, options.model_hdf5_file)
         print torch_cmd
@@ -99,7 +109,7 @@ def main():
     # load model output
     model_hdf5_in = h5py.File(options.model_hdf5_file, 'r')
     filter_weights = np.array(model_hdf5_in['weights'])
-    filter_outs = np.array(model_hdf5_in['outs'])
+    filter_outs = np.array(model_hdf5_in['outs']) # 
     model_hdf5_in.close()
 
     # store useful variables
@@ -112,16 +122,19 @@ def main():
     #################################################################
     # also save information contents
     filters_ic = []
-    meme_out = meme_intro('%s/filters_meme.txt'%options.out_dir, seqs)
+    meme_out_file = meme_intro('%s/filters_meme.txt'%options.out_dir, seqs)
 
-    for f in range(num_filters):
+    # for f in range(num_filters):
+    for f in range(10):
         print 'Filter %d' % f
 
         # plot filter parameters as a heatmap
-        plot_filter_heat(filter_weights[f,:,:], '%s/filter%d_heat.pdf' % (options.out_dir,f))
+        if not options.skip_heat:
+            plot_filter_heat(filter_weights[f,:,:], '%s/filter%d_heat.pdf' % (options.out_dir,f))
 
         # plot weblogo of high scoring outputs
-        plot_filter_logo(filter_outs[:,f,:], filter_size, seqs, '%s/filter%d_logo'%(options.out_dir,f), maxpct_t=0.5)
+        if not options.skip_logo:
+            plot_filter_logo(filter_outs[:,f,:], filter_size, seqs, '%s/filter%d_logo'%(options.out_dir,f), maxpct_t=0.5)
 
         # make a PWM for the filter
         filter_pwm, nsites = make_filter_pwm('%s/filter%d_logo.fa'%(options.out_dir,f))
@@ -129,14 +142,15 @@ def main():
         if nsites < 10:
             # no information
             filters_ic.append(0)
+            print "No information"
         else:
             # compute and save information content
             filters_ic.append(info_content(filter_pwm))
 
             # add to the meme motif file
-            meme_add(meme_out, f, filter_pwm, nsites, options.trim_filters)
+            meme_add(meme_out_file, f, filter_pwm, nsites, options.trim_filters)
 
-    meme_out.close()
+    meme_out_file.close()
 
 
     #################################################################
@@ -256,21 +270,25 @@ def meme_add(meme_out, f, filter_pwm, nsites, trim_filters=False):
         filter_pwm (array) : filter PWM array
         nsites (int) : number of filter sites
     '''
+    print "Adding a meme filter"
     if not trim_filters:
         ic_start = 0
         ic_end = filter_pwm.shape[0]-1
     else:
         ic_t = 0.2
 
+        print filter_pwm
         # trim PWM of uninformative prefix
         ic_start = 0
         while ic_start < filter_pwm.shape[0] and info_content(filter_pwm[ic_start:ic_start+1]) < ic_t:
+            print info_content(filter_pwm[ic_start:ic_start+1])
             ic_start += 1
 
         # trim PWM of uninformative suffix
         ic_end = filter_pwm.shape[0]-1
         while ic_end >= 0 and info_content(filter_pwm[ic_end:ic_end+1]) < ic_t:
             ic_end -= 1
+    print ic_start, ic_end, "trimmed indices"
 
     if ic_start < ic_end:
         print >> meme_out, 'MOTIF filter%d' % f
@@ -280,6 +298,10 @@ def meme_add(meme_out, f, filter_pwm, nsites, trim_filters=False):
             print >> meme_out, '%.4f %.4f %.4f %.4f' % tuple(filter_pwm[i])
         print >> meme_out, ''
 
+        print 'MOTIF filter%d' % f
+        print >> 'letter-probability matrix: alength= 4 w= %d nsites= %d' % (ic_end-ic_start+1, nsites)
+        for i in range(ic_start, ic_end+1):
+            print '%.4f %.4f %.4f %.4f' % tuple(filter_pwm[i])
 
 def meme_intro(meme_file, seqs):
     ''' Open MEME motif format file and print intro
@@ -289,7 +311,7 @@ def meme_intro(meme_file, seqs):
         seqs [str] : list of strings for obtaining background freqs
 
     Returns:
-        mem_out : open MEME file
+        meme_out : open MEME file
     '''
     nts = {'A':0, 'C':1, 'G':2, 'T':3}
 
@@ -306,8 +328,13 @@ def meme_intro(meme_file, seqs):
     nt_sum = float(sum(nt_counts))
     nt_freqs = [nt_counts[i]/nt_sum for i in range(4)]
 
-    # open file for writing
-    meme_out = open(meme_file, 'w')
+    # open file for writing, erase contents
+    meme_clear = open(meme_file, 'w')
+    print >> meme_clear, ''
+    meme_clear.close()
+
+    # append to the file
+    meme_out = open(meme_file, 'a')
 
     # print intro material
     print >> meme_out, 'MEME version 4'
@@ -576,16 +603,15 @@ def plot_filter_logo(filter_outs, filter_size, seqs, out_prefix, raw_t=0, maxpct
         for j in range(filter_outs.shape[1]):
             if filter_outs[i,j] > raw_t:
                 kmer = seqs[i][j:j+filter_size]
-                print >> filter_fasta_out, '>%d_%d' % (i,j)
+                print >> filter_fasta_out, '>%d_%d' % (i,j) # ith filter, jth position in filter
                 print >> filter_fasta_out, kmer
                 filter_count += 1
     filter_fasta_out.close()
 
     # make weblogo
     if filter_count > 0:
-        weblogo_cmd = 'weblogo %s < %s.fa > %s.eps' % (weblogo_opts, out_prefix, out_prefix)
-        subprocess.call(weblogo_cmd, shell=True)
-
+        weblogo_cmd = 'weblogo %s < %s.fa > %s.png' % (weblogo_opts, out_prefix, out_prefix)
+        subprocess.call(weblogo_cmd, shell=True,  stdout=FNULL, stderr=subprocess.STDOUT) # suppress FutureWarning
 
 ################################################################################
 # plot_score_density

@@ -8,6 +8,7 @@ data/subsets
 data/models/*.th
 src/.ipynb_checkpoints
 src/torch-hdf5
+src/motifs_out
 tutorials/*.bed
 tutorials/*.fa
 tutorials/*.h5

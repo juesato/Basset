@@ -125,7 +125,7 @@ def main():
     meme_out_file = meme_intro('%s/filters_meme.txt'%options.out_dir, seqs)
 
     # for f in range(num_filters):
-    for f in range(10):
+    for f in range(3):
         print 'Filter %d' % f
 
         # plot filter parameters as a heatmap
@@ -623,10 +623,49 @@ def plot_filter_logo(filter_outs, filter_size, seqs, out_prefix, raw_t=0, maxpct
 #  out_pdf:
 ################################################################################
 def plot_score_density(f_scores, out_pdf):
+    ### Create histogram of filter outputs 
     sns.set(font_scale=1.3)
     plt.figure()
-    sns.distplot(f_scores, kde=False)
+    # sns.distplot(f_scores, kde=False)
     plt.xlabel('ReLU output')
+
+    # Discontinuous y-axis so that 0 bin does not overwhelm graph
+    # f, (ax, ax2) = plt.subplots(2, 1, sharex=True)
+    f = plt.figure()
+    gs = matplotlib.gridspec.GridSpec(2, 1, height_ratios=[1,5])
+    ax = f.add_subplot(gs[0])
+    ax2 = f.add_subplot(gs[1], sharex=ax)
+
+    # plot the same data on both axes
+    ax.hist(f_scores)
+    ax2.hist(f_scores)
+
+    # zoom-in / limit the view to different portions of the data
+    y_max = f_scores.shape[0]
+    EPS = .1
+    num_nonzero = np.count_nonzero(f_scores)
+    num_zero = y_max - num_nonzero
+    num_eps = y_max - np.count_nonzero(np.clip(f_scores, EPS, 999) - EPS)    
+    ax.set_ylim(num_zero - 1000, num_eps + 1000)  # outliers only
+    ax2.set_ylim(0, num_nonzero)  # most of the data
+
+    # hide the spines between ax and ax2
+    ax.spines['bottom'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+    ax.xaxis.tick_top()
+    ax.tick_params(labeltop='off')  # don't put tick labels at the top
+    ax2.xaxis.tick_bottom()
+
+    # Diagonal lines to indicate discontinuity
+    d = .015  # how big to make the diagonal lines in axes coordinates
+    # arguments to pass plot, just so we don't keep repeating them
+    kwargs = dict(transform=ax.transAxes, color='k', clip_on=False)
+    ax.plot((-d, +d), (-d, +d), **kwargs)        # top-left diagonal
+    ax.plot((1 - d, 1 + d), (-d, +d), **kwargs)  # top-right diagonal
+    kwargs.update(transform=ax2.transAxes)  # switch to the bottom axes
+    ax2.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
+    ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right diagonal
+
     plt.savefig(out_pdf)
     plt.close()
 

@@ -32,6 +32,13 @@ require 'convnet'
 local data_open = hdf5.open(opt.data_file, 'r')
 local test_seqs = data_open:read('test_in')
 
+-------
+-- Had to move this here because of funky stuff
+local hdf_out = hdf5.open(opt.out_file, 'w')
+hdf_out:write("seqs", test_seqs:all())
+--
+-------
+
 ----------------------------------------------------------------
 -- construct model
 ----------------------------------------------------------------
@@ -49,6 +56,7 @@ convnet:load(convnet_params)
 convnet.model:evaluate()
 
 -- measure accuracy on a test set
+print(#test_seqs:all())
 local preds = convnet:predict(test_seqs)
 
 if opt.norm then
@@ -66,20 +74,19 @@ data_open:close()
 ----------------------------------------------------------------
 -- dump to file
 ----------------------------------------------------------------
-local predict_out = io.open(opt.out_file, 'w')
+-- local predict_out = io.open(opt.out_file, 'w')
 
--- print predictions
+-- -- print predictions
 
-for si=1,(#preds)[1] do
-    predict_out:write(preds[{si,1}])
-    for ti=2,(#preds)[2] do -- 164 cell types
-        predict_out:write(string.format("\t%s",preds[{si,ti}]))
-    end
-    predict_out:write("\n")
-end
+-- for si=1,(#preds)[1] do
+--     predict_out:write(preds[{si,1}])
+--     for ti=2,(#preds)[2] do -- 164 cell types
+--         predict_out:write(string.format("\t%s",preds[{si,ti}]))
+--     end
+--     predict_out:write("\n")
+-- end
 
-predict_out:close()
+-- predict_out:close()
 
--- local hdf_out = hdf5.open(opt.out_file, 'w')
--- hdf_out:write("preds", preds)
--- hdf_out:close()
+hdf_out:write("preds", preds)
+hdf_out:close()

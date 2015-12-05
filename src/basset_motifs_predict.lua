@@ -57,6 +57,7 @@ local filter_outs = convnet:get_nonlinearity(1).output:squeeze()
 local hdf_out = hdf5.open(opt.out_file, 'w')
 hdf_out:write('weights', filter_weights)
 hdf_out:write('outs', filter_outs)
+hdf_out:write('sample_seqs', test_seqs:all())
 hdf_out:close()
 
 data_open:close()

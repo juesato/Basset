@@ -92,8 +92,9 @@ def main():
         # update test HDF5
         test_hdf5_file = sample_hdf5_file
 
+    print "Finished creating sample file"
     # convert to letters
-    seqs = dna_io.vecs2dna(seq_vecs)
+    # seqs = dna_io.vecs2dna(seq_vecs)
 
 
     #################################################################
@@ -110,6 +111,8 @@ def main():
     model_hdf5_in = h5py.File(options.model_hdf5_file, 'r')
     filter_weights = np.array(model_hdf5_in['weights'])
     filter_outs = np.array(model_hdf5_in['outs']) # 
+    seq_vecs = model_hdf5_in['sample_seqs']
+    seqs = dna_io.vecs2dna(seq_vecs)
     model_hdf5_in.close()
 
     # store useful variables
@@ -124,8 +127,7 @@ def main():
     filters_ic = []
     meme_out_file = meme_intro('%s/filters_meme.txt'%options.out_dir, seqs)
 
-    # for f in range(num_filters):
-    for f in range(3):
+    for f in range(num_filters):
         print 'Filter %d' % f
 
         # plot filter parameters as a heatmap
@@ -299,7 +301,7 @@ def meme_add(meme_out, f, filter_pwm, nsites, trim_filters=False):
         print >> meme_out, ''
 
         print 'MOTIF filter%d' % f
-        print >> 'letter-probability matrix: alength= 4 w= %d nsites= %d' % (ic_end-ic_start+1, nsites)
+        print 'letter-probability matrix: alength= 4 w= %d nsites= %d' % (ic_end-ic_start+1, nsites)
         for i in range(ic_start, ic_end+1):
             print '%.4f %.4f %.4f %.4f' % tuple(filter_pwm[i])
 

@@ -69,9 +69,10 @@ data_open:close()
 local predict_out = io.open(opt.out_file, 'w')
 
 -- print predictions
+
 for si=1,(#preds)[1] do
     predict_out:write(preds[{si,1}])
-    for ti=2,(#preds)[2] do
+    for ti=2,(#preds)[2] do -- 164 cell types
         predict_out:write(string.format("\t%s",preds[{si,ti}]))
     end
     predict_out:write("\n")

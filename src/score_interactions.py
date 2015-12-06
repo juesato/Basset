@@ -37,16 +37,13 @@ def one_hot(seqs):
     seq_vecs_list = []
     for seq in seqs:
         seq_len = len(seq)
-        seq_code = np.zeros((4,1,seq_len), dtype='int8')
+        seq_code = np.zeros((4,1,seq_len), dtype='float')
         for i in range(seq_len):
             if seq[i] in bp_code:
                 seq_code[bp_code[seq[i]], 0, i] = 1
             else:
                 seq_code[:,0, i] = .25
 
-        # flatten and make a column vector 1 x len(seq)
-        # seq_vec = seq_code.flatten()[None,:]
-        print seq_code.shape
         seq_vecs_list.append(seq_code)
 
     seq_vecs = np.array(seq_vecs_list)
@@ -95,28 +92,38 @@ def write_model_outputs_to_file(mxSequences, model_file, outputs_file):
     num_filters = len(mxSequences)
     len_filter = len(mxSequences[0])
 
-    num_filters = 10
+    AP1_FILTERS = [54, 91, 264, 119, 174]
+    CTCF_FILTERS = [9, 136, 147]
+    UNK_FILTERS = [3,5,7,10]
 
     testSeqs = []
-    for s in mxSequences:
-        seq = 'N'*300 + s + 'N'*(300-len_filter)
-        seq_as_vec = [bp2vec[c] for c in seq]
-        # testSeqs.append(seq_as_vec)
+    BASE_SEQ = 'GCACAGTTTGTCCGCTGGGACTCTACTCGAACTTTTAACGAAACTCGTATGGCCAGGCAGGTGGACCCATAAACTCCTCGGCAAATCCCCACCGCGCCCATTTCTATGGATATTGTGCCGCATCGAACGAAAAATGATACTGCACTCGAGTCCTAAGCTCAGACCAGCGGGTACTTTCAGTCGCACTCTGGTACTACGGTATTTGGCTTCCGATAGTAAATTATGTTGCCCAGCTGCTTCAATTGGTTTGGAAGTTCGTTGGATCGGCGGAGTATTACATTTCCGACACCAGAATACCAGACGTTTTCACACATGAGAGCGGAGTTCCACCGGACGGCTGTCTCGTGGCGAAACTGTACCTAGTGTGTCGAGCTGTACTCGGTTTATAAATTAACGCATGCGAGTGAAAGAGAGATCTGTCCCGTGAACACCCACGTAGCCCTCGAGCTGCAAAGCTTCCGCCAGATAAGCACGACGGAGGCGTGCGGGGCCACACTACCGTGTTGGGAATCGAGGGATTACCAGATCCGGTGCATCAACTGATATTCCGTACCGCGACAGTGTAATGTATCGGTAGTACCCTGCCTGATTCTCTTGCCG'
+    # BASE_SEQ = 'N'*600
+    WINDOW_SIZE = 5
+
+    FILTER_LIST = AP1_FILTERS[:-2] + CTCF_FILTERS
+    # FILTER_LIST = AP1_FILTERS[:-2] + CTCF_FILTERS + UNK_FILTERS[:-1]
+    # FILTER_LIST = CTCF_FILTERS
+
+    single_motifs = []
+    for i in FILTER_LIST:
+        single_motifs.append(mxSequences[i])                                                                                             
+
+    for s in single_motifs:
+        seq = BASE_SEQ[:300] + s + BASE_SEQ[300+len_filter:]
         testSeqs.append(seq)
 
-    for i in range(num_filters):
-        for j in range(i, num_filters):
-            for k in range(10):
-                x = 300 - len_filter - k
-                seq = 'N'*x + mxSequences[j] + 'N'*k + mxSequences[i] + 'N'*(300-len_filter)
-                seq_as_vec = [bp2vec[c] for c in seq]
-                # testSeqs.append(seq_as_vec)
+    # for i in range(num_filters):
+        # for j in range(i, num_filters):
+    for i in FILTER_LIST:
+        for j in FILTER_LIST:
+            for z in range(WINDOW_SIZE):
+                k = z*10
+                seq = BASE_SEQ[:300-len_filter-k] + mxSequences[j] + BASE_SEQ[300-k:300] + mxSequences[i] + BASE_SEQ[300+len_filter:]
                 testSeqs.append(seq)
-            for k in range(10):
-                x = 300 + 2*len_filter + k
-                seq = 'N'*300 + mxSequences[i] + 'N'*k + mxSequences[j] + 'N'*(600-x)
-                seq_as_vec = [bp2vec[c] for c in seq]
-                # testSeqs.append(seq_as_vec)
+            for z in range(WINDOW_SIZE):
+                k = z*10
+                seq = BASE_SEQ[:300] + mxSequences[i] + BASE_SEQ[300+len_filter:300+len_filter+k] + mxSequences[j] + BASE_SEQ[300+2*len_filter+k:]
                 testSeqs.append(seq)
 
     # testSeqs = np.array(testSeqs, dtype='float')

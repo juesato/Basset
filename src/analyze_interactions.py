@@ -47,7 +47,11 @@ def main():
 
     (single_motif_scores, paired_motif_scores, seqs) = parse_filter_scores_hdf5(scores_hdf5_file)
     print len(single_motif_scores)
-    print len(paired_motif_scores)
+    print "Inserting one motif"
+    print single_motif_scores
+    # print len(paired_motif_scores)
+    print "Inserting combinations of one other motif with first motif"
+    print single_motif_scores[0]
     print len(paired_motif_scores[0])
     print seqs
 

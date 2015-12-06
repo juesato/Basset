@@ -75,27 +75,28 @@ def main():
     #################################################################
     # sample
     #################################################################
-    if options.sample is not None:
-        # choose sampled indexes
-        sample_i = np.array(random.sample(xrange(seq_vecs.shape[0]), options.sample))
+    if options.model_hdf5_file is not None:
+        print "Model outs file specified. Do not resample, use sample sequences from model outs file."
+    else:
+        if options.sample is not None:
+            # choose sampled indexes
+            sample_i = np.array(random.sample(xrange(seq_vecs.shape[0]), options.sample))
 
-        # filter
-        seq_vecs = seq_vecs[sample_i]
-        seq_targets = seq_targets[sample_i]
+            # filter
+            seq_vecs = seq_vecs[sample_i]
+            seq_targets = seq_targets[sample_i]
 
-        # create a new HDF5 file
-        sample_hdf5_file = '%s/sample.h5' % options.out_dir
-        sample_hdf5_out = h5py.File(sample_hdf5_file, 'w')
-        sample_hdf5_out.create_dataset('test_in', data=seq_vecs)
-        sample_hdf5_out.close()
+            # create a new HDF5 file
+            sample_hdf5_file = '%s/sample.h5' % options.out_dir
+            sample_hdf5_out = h5py.File(sample_hdf5_file, 'w')
+            print seq_vecs.shape
+            sample_hdf5_out.create_dataset('test_in', data=seq_vecs)
+            sample_hdf5_out.close()
 
-        # update test HDF5
-        test_hdf5_file = sample_hdf5_file
+            # update test HDF5
+            test_hdf5_file = sample_hdf5_file
 
-    print "Finished creating sample file"
-    # convert to letters
-    # seqs = dna_io.vecs2dna(seq_vecs)
-
+        print "Finished creating sample file"
 
     #################################################################
     # Torch predict

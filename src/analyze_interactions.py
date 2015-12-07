@@ -49,10 +49,13 @@ def parse_filter_scores_hdf5(scores_hdf5_file):
 
     return (single_motif_scores, paired_motif_scores, seqs)
 
-def plot_scores(motif1, motif2, scores):
+def plot_scores(motif1_name, motif2_name, scores):
     x = WINDOWS
     y = scores
-
+    plt.figure()
+    plt.scatter(x,y)
+    plt.savefig('interaction_plots/plot%s_%s.png' % (motif1_name[0], motif2_name[0]))
+    plt.close()
 
 def main():
     usage = 'usage: %prog [options] <interaction_scores_hdf5_file>'
@@ -68,8 +71,8 @@ def main():
             a = seqs[i].strip('N')
             b = seqs[j].strip('N')
             ij_scores = paired_motif_scores[i][j] # 0 at the end to take first cell type
-            cell0_scores = [ij_scores[i][0] for i in range(WINDOW_SIZE)]
-            plot_scores(a,b,cell0_scores)
+            cell0_scores = [ij_scores[k][0] for k in range(WINDOW_SIZE)]
+            plot_scores(str(i)+'_' +a,str(j)+'_'+b,cell0_scores)
 
     print len(single_motif_scores)
     # print "Inserting one motif"

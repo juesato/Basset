@@ -4,16 +4,14 @@ import numpy as np
 
 import dna_io
 
-import matplotlib.pyplot as plt
-
 ##### IMPORTANT: CHECK THESE ARE RIGHT #####
-NUM_SEQS = 12
+NUM_MOTIFS = 12
 NUM_BASE_SEQS = 10
 
 def parse_interaction_scores_hdf5(scores_hdf5_file):
     ### single motif scores = [activation for each filter][base_seq]
     ### paired motif scores = activation for [filter1][filter2][base_seq]
-    ### seqs = motif that is used to represent each filter
+    ### motif_seqs = motif that is used to represent each filter
 
     def get_base_seqs(seqs):
         return seqs[:NUM_BASE_SEQS]
@@ -21,7 +19,7 @@ def parse_interaction_scores_hdf5(scores_hdf5_file):
     def get_motifs(seqs):
         motif_seqs = []
         z = NUM_BASE_SEQS
-        for i in range(NUM_SEQS):
+        for i in range(NUM_MOTIFS):
             motif_seqs.append(seqs[z][300:319])
             for j in range(NUM_BASE_SEQS):
                 z += 1
@@ -36,21 +34,21 @@ def parse_interaction_scores_hdf5(scores_hdf5_file):
     def get_single_motif_scores(preds):
         single_motif_scores = []
         z = NUM_BASE_SEQS
-        for i in range(NUM_SEQS):
+        for i in range(NUM_MOTIFS):
             for j in range(NUM_BASE_SEQS):
                 single_motif_scores[i][j] = preds[z]
                 z += 1
 
     def get_paired_motif_scores(preds):
         paired_motif_scores = []
-        for i in range(num_seqs):
+        for i in range(NUM_MOTIFS):
             paired_motif_scores.append([])
-            for j in range(num_seqs):
+            for j in range(NUM_MOTIFS):
                 paired_motif_scores[i].append([False] * NUM_BASE_SEQS)
 
-        z = NUM_BASE_SEQS + NUM_BASE_SEQS * NUM_SEQS
-        for i in range(NUM_SEQS):
-            for j in range(NUM_SEQS):
+        z = NUM_BASE_SEQS + NUM_BASE_SEQS * NUM_MOTIFS
+        for i in range(NUM_MOTIFS):
+            for j in range(NUM_MOTIFS):
                 for k in range(NUM_BASE_SEQS):
                     paired_motif_scores[i][j][k] = preds[z]
                     z += 1
@@ -64,7 +62,7 @@ def parse_interaction_scores_hdf5(scores_hdf5_file):
     scores_hdf5_in.close()
 
     ### Make sure global variables are set properly
-    assert(NUM_BASE_SEQS + NUM_BASE_SEQS * NUM_SEQS + NUM_BASE_SEQS * NUM_SEQS * NUM_SEQS == len(preds))
+    assert(NUM_BASE_SEQS + NUM_BASE_SEQS * NUM_MOTIFS + NUM_BASE_SEQS * NUM_MOTIFS * NUM_MOTIFS == len(preds))
 
     base_seqs = get_base_seqs(seqs)
     base_scores = get_base_scores(preds)
@@ -82,8 +80,8 @@ def main():
 
     (base_seqs, base_scores, single_motif_scores, paired_motif_scores, motif_seqs) = parse_interaction_scores_hdf5(scores_hdf5_file)
     significant_interactions = []
-    for i in range(NUM_SEQS):
-        for j in range(NUM_SEQS):
+    for i in range(NUM_MOTIFS):
+        for j in range(NUM_MOTIFS):
             bool_interaction_positive = []
             for k in range(NUM_BASE_SEQS):
                 ij_score = paired_motif_scores[i][j][k][0] # 0 at the end to take first cell type

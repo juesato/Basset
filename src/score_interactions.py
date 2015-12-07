@@ -114,24 +114,27 @@ def write_model_outputs_to_file(mxSequences, model_file, outputs_file):
     # FILTER_LIST = AP1_FILTERS[:-2] + CTCF_FILTERS + UNK_FILTERS[:-1]
     # FILTER_LIST = CTCF_FILTERS                                                                                       
 
+    ### Add base sequences ###
     for z in range(10):
         testSeqs.append(BASE_SEQS[z])
 
+    ### Add single motifs ###
     for i in FILTER_LIST:
         for z in range(10):
             base_seq = BASE_SEQS[z]
             seq = base_seq[:300] + mxSequences[i] + base_seq[300+len_filter:]
             testSeqs.append(seq)
 
-    # for i in range(num_filters):
-        # for j in range(i, num_filters):
+    ### Add single motifs at offsets ###
+    for i in FILTER_LIST:
+        for z in range(10):
+            base_seq = BASE_SEQS[z]
+            seq = base_seq[:310] + mxSequences[i] + base_seq[310+len_filter:]
+            testSeqs.append(seq)
+
+    ### Add motif pairs ###
     for i in FILTER_LIST:
         for j in FILTER_LIST:
-            # for z in range(WINDOW_SIZE):
-            #     k = z*10
-            #     seq = BASE_SEQ[:300-len_filter-k] + mxSequences[j] + BASE_SEQ[300-k:300] + mxSequences[i] + BASE_SEQ[300+len_filter:]
-            #     testSeqs.append(seq)
-            # for z in range(WINDOW_SIZE):
             for z in range(10):
                 base_seq = BASE_SEQS[z]
                 k = 10

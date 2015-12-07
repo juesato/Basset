@@ -35,9 +35,21 @@ def parse_interaction_scores_hdf5(scores_hdf5_file):
         single_motif_scores = []
         z = NUM_BASE_SEQS
         for i in range(NUM_MOTIFS):
+            single_motif_scores.append([False] * NUM_BASE_SEQS)
             for j in range(NUM_BASE_SEQS):
                 single_motif_scores[i][j] = preds[z]
                 z += 1
+        return single_motif_scores
+
+    def get_single_motif_scores_offset(preds):
+        z = NUM_BASE_SEQS + NUM_BASE_SEQS * NUM_MOTIFS
+        single_motif_scores = []
+        for i in range(NUM_MOTIFS):
+            single_motif_scores.append([False] * NUM_BASE_SEQS)
+            for j in range(NUM_BASE_SEQS):
+                single_motif_scores.append(preds[z])
+                z += 1
+        return single_motif_scores
 
     def get_paired_motif_scores(preds):
         paired_motif_scores = []
@@ -46,7 +58,7 @@ def parse_interaction_scores_hdf5(scores_hdf5_file):
             for j in range(NUM_MOTIFS):
                 paired_motif_scores[i].append([False] * NUM_BASE_SEQS)
 
-        z = NUM_BASE_SEQS + NUM_BASE_SEQS * NUM_MOTIFS
+        z = NUM_BASE_SEQS + 2 * NUM_BASE_SEQS * NUM_MOTIFS
         for i in range(NUM_MOTIFS):
             for j in range(NUM_MOTIFS):
                 for k in range(NUM_BASE_SEQS):
@@ -62,15 +74,16 @@ def parse_interaction_scores_hdf5(scores_hdf5_file):
     scores_hdf5_in.close()
 
     ### Make sure global variables are set properly
-    assert(NUM_BASE_SEQS + NUM_BASE_SEQS * NUM_MOTIFS + NUM_BASE_SEQS * NUM_MOTIFS * NUM_MOTIFS == len(preds))
+    assert(NUM_BASE_SEQS + 2 * NUM_BASE_SEQS * NUM_MOTIFS + NUM_BASE_SEQS * NUM_MOTIFS * NUM_MOTIFS == len(preds))
 
     base_seqs = get_base_seqs(seqs)
     base_scores = get_base_scores(preds)
     single_motif_scores = get_single_motif_scores(preds)
+    single_motif_scores_offset = get_single_motif_scores(preds)
     paired_motif_scores = get_paired_motif_scores(preds)
     motif_seqs = get_motifs(seqs)
 
-    return (base_seqs, base_scores, single_motif_scores, paired_motif_scores, motif_seqs)
+    return (base_seqs, base_scores, single_motif_scores, single_motif_scores_offset, paired_motif_scores, motif_seqs)
 
 def main():
     usage = 'usage: %prog [options] <interaction_scores_hdf5_file>'
@@ -78,7 +91,7 @@ def main():
     (options,args) = parser.parse_args()
     scores_hdf5_file = args[0]
 
-    (base_seqs, base_scores, single_motif_scores, paired_motif_scores, motif_seqs) = parse_interaction_scores_hdf5(scores_hdf5_file)
+    (base_seqs, base_scores, single_motif_scores, single_motif_scores_offset, paired_motif_scores, motif_seqs) = parse_interaction_scores_hdf5(scores_hdf5_file)
     significant_interactions = []
     for i in range(NUM_MOTIFS):
         for j in range(NUM_MOTIFS):

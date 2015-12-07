@@ -98,32 +98,44 @@ def write_model_outputs_to_file(mxSequences, model_file, outputs_file):
 
     testSeqs = []
     BASE_SEQ = 'GCACAGTTTGTCCGCTGGGACTCTACTCGAACTTTTAACGAAACTCGTATGGCCAGGCAGGTGGACCCATAAACTCCTCGGCAAATCCCCACCGCGCCCATTTCTATGGATATTGTGCCGCATCGAACGAAAAATGATACTGCACTCGAGTCCTAAGCTCAGACCAGCGGGTACTTTCAGTCGCACTCTGGTACTACGGTATTTGGCTTCCGATAGTAAATTATGTTGCCCAGCTGCTTCAATTGGTTTGGAAGTTCGTTGGATCGGCGGAGTATTACATTTCCGACACCAGAATACCAGACGTTTTCACACATGAGAGCGGAGTTCCACCGGACGGCTGTCTCGTGGCGAAACTGTACCTAGTGTGTCGAGCTGTACTCGGTTTATAAATTAACGCATGCGAGTGAAAGAGAGATCTGTCCCGTGAACACCCACGTAGCCCTCGAGCTGCAAAGCTTCCGCCAGATAAGCACGACGGAGGCGTGCGGGGCCACACTACCGTGTTGGGAATCGAGGGATTACCAGATCCGGTGCATCAACTGATATTCCGTACCGCGACAGTGTAATGTATCGGTAGTACCCTGCCTGATTCTCTTGCCG'
-    # BASE_SEQ = 'N'*600
-    WINDOW_SIZE = 5
 
-    FILTER_LIST = AP1_FILTERS[:-2] + CTCF_FILTERS
+    BASE_SEQS = []
+    for i in range(10):
+        bps = 'ACGT'
+        seq = ''
+        for j in range(600):
+            seq += bps[random.randint(0,3)]
+        BASE_SEQS.append(seq)
+
+    # WINDOW_SIZE = 1
+
+    FILTER_LIST = AP1_FILTERS  + CTCF_FILTERS + UNK_FILTERS
+    # FILTER_LIST = AP1_FILTERS[:-2] + CTCF_FILTERS
     # FILTER_LIST = AP1_FILTERS[:-2] + CTCF_FILTERS + UNK_FILTERS[:-1]
-    # FILTER_LIST = CTCF_FILTERS
+    # FILTER_LIST = CTCF_FILTERS                                                                                       
 
-    single_motifs = []
+    for z in range(10):
+        testSeqs.append(BASE_SEQS[z])
+
     for i in FILTER_LIST:
-        single_motifs.append(mxSequences[i])                                                                                             
-
-    for s in single_motifs:
-        seq = BASE_SEQ[:300] + s + BASE_SEQ[300+len_filter:]
-        testSeqs.append(seq)
+        for z in range(10):
+            base_seq = BASE_SEQS[z]
+            seq = base_seq[:300] + mxSequences[i] + base_seq[300+len_filter:]
+            testSeqs.append(seq)
 
     # for i in range(num_filters):
         # for j in range(i, num_filters):
     for i in FILTER_LIST:
         for j in FILTER_LIST:
-            for z in range(WINDOW_SIZE):
-                k = z*10
-                seq = BASE_SEQ[:300-len_filter-k] + mxSequences[j] + BASE_SEQ[300-k:300] + mxSequences[i] + BASE_SEQ[300+len_filter:]
-                testSeqs.append(seq)
-            for z in range(WINDOW_SIZE):
-                k = z*10
-                seq = BASE_SEQ[:300] + mxSequences[i] + BASE_SEQ[300+len_filter:300+len_filter+k] + mxSequences[j] + BASE_SEQ[300+2*len_filter+k:]
+            # for z in range(WINDOW_SIZE):
+            #     k = z*10
+            #     seq = BASE_SEQ[:300-len_filter-k] + mxSequences[j] + BASE_SEQ[300-k:300] + mxSequences[i] + BASE_SEQ[300+len_filter:]
+            #     testSeqs.append(seq)
+            # for z in range(WINDOW_SIZE):
+            for z in range(10):
+                base_seq = BASE_SEQS[z]
+                k = 10
+                seq = base_seq[:300] + mxSequences[i] + base_seq[300+len_filter:300+len_filter+k] + mxSequences[j] + base_seq[300+2*len_filter+k:]
                 testSeqs.append(seq)
 
     # testSeqs = np.array(testSeqs, dtype='float')
